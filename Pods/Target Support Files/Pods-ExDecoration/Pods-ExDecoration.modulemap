@@ -1,0 +1,6 @@
+framework module Pods_ExDecoration {
+  umbrella header "Pods-ExDecoration-umbrella.h"
+
+  export *
+  module * { export * }
+}
