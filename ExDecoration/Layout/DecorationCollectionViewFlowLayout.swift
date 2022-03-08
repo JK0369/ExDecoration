@@ -12,14 +12,18 @@ protocol DecorationCollectionViewFlowLayoutDataSource: AnyObject {
 }
 
 final class DecorationCollectionViewFlowLayout: UICollectionViewFlowLayout {
-  private var cachedAttributes = [IndexPath: UICollectionViewLayoutAttributes]()
+  private enum Threshold {
+    static let cellStartZIndex = 100
+    static let decorationStartZIndex = 0
+  }
+  private var cachedDecorationViewAttributes = [IndexPath: UICollectionViewLayoutAttributes]()
   weak var dataSource: DecorationCollectionViewFlowLayoutDataSource?
   
   override func prepare() {
     super.prepare()
     guard let collectionView = collectionView else { return }
     guard let dataSource = dataSource else { fatalError("Conform DecorationCollectionViewFlowLayoutDataSource") }
-    self.cachedAttributes.removeAll()
+    self.cachedDecorationViewAttributes.removeAll()
     
     // 1. DecorationView 등록
     self.register(BackgroundDecorationView.self, forDecorationViewOfKind: BackgroundDecorationView.id)
@@ -35,27 +39,30 @@ final class DecorationCollectionViewFlowLayout: UICollectionViewFlowLayout {
           let indexPath = IndexPath(item: item, section: section)
           let attributes = UICollectionViewLayoutAttributes(forDecorationViewOfKind: BackgroundDecorationView.id, with: indexPath)
           attributes.frame = dataSource.getDecorationViewRect(collectionView, indexPath: indexPath)
-          self?.cachedAttributes[indexPath] = attributes
+          self?.cachedDecorationViewAttributes[indexPath] = attributes
         }
       }
   }
   override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+    // 1. DecorationView가 아닌 것들(Cell)을 획득
     var array = super.layoutAttributesForElements(in: rect)
-    guard let collection = collectionView, collection.numberOfSections > 0 else{
-      return array
+    guard self.collectionView?.numberOfSections ?? 0 > 0 else { return array }
+    
+    // 2. DecorationView가 아닌 것
+    var cellZIndex = 0
+    array?.forEach {
+      $0.zIndex = cellZIndex + Threshold.cellStartZIndex
+      cellZIndex += 1
     }
-    var z = 0
-    array?.forEach({
-      $0.zIndex = z + 100
-      z += 1
-    })
-    z = 0
-    for (_, attributes) in self.cachedAttributes {
+
+    // 3. DecorationView인 것
+    var decorationZIndex = 0
+    for (_, attributes) in self.cachedDecorationViewAttributes {
       if attributes.frame.intersects(rect){
-        attributes.zIndex = z + 10
+        attributes.zIndex = decorationZIndex + Threshold.decorationStartZIndex
         array?.append(attributes)
       }
-      z += 1
+      decorationZIndex += 1
     }
     return array
   }
@@ -63,6 +70,6 @@ final class DecorationCollectionViewFlowLayout: UICollectionViewFlowLayout {
     ofKind elementKind: String,
     at indexPath: IndexPath
   ) -> UICollectionViewLayoutAttributes? {
-    self.cachedAttributes[indexPath]
+    self.cachedDecorationViewAttributes[indexPath]
   }
 }
