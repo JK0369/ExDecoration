@@ -10,20 +10,9 @@ import SnapKit
 import Then
 
 class ViewController: UIViewController {
-  private enum Metric {
-    static let numberOfColumns = 2
-    static let maximumWidth = UIScreen.main.bounds.width
-    static let cellSpacing = 8.0
-    static let backgroundMargin = 6.0
-  }
   private lazy var collectionView = UICollectionView(
     frame: .zero,
-    collectionViewLayout: DecorationCollectionViewFlowLayout(
-      numberOfColumns: Metric.numberOfColumns,
-      maximumWidth: Metric.maximumWidth,
-      cellSpacing: Metric.cellSpacing,
-      backgroundMargin: Metric.backgroundMargin
-    ).then {
+    collectionViewLayout: DecorationCollectionViewFlowLayout().then {
       $0.dataSource = self
     }
   ).then {
@@ -81,7 +70,7 @@ extension ViewController: UICollectionViewDataSource {
 }
 
 extension ViewController: DecorationCollectionViewFlowLayoutDataSource {
-  func collectionView(_ collectionView: UICollectionView, indexPath: IndexPath) -> CGSize {
-    CGSize(width: 50, height: 50)
+  func getDecorationViewRect(_ collectionView: UICollectionView, indexPath: IndexPath) -> CGRect {
+    .init(x: 60, y: 50, width: 120, height: 300)
   }
 }

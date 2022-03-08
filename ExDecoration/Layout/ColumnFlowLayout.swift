@@ -8,71 +8,35 @@
 import UIKit
 
 protocol DecorationCollectionViewFlowLayoutDataSource: AnyObject {
-  /// cellSize
-  func collectionView(_ collectionView: UICollectionView, indexPath: IndexPath) -> CGSize
+  func getDecorationViewRect(_ collectionView: UICollectionView, indexPath: IndexPath) -> CGRect
 }
 
 final class DecorationCollectionViewFlowLayout: UICollectionViewFlowLayout {
-  private let numberOfColumns: Int
-  private let maximumWidth: CGFloat
-  private let cellSpacing: CGFloat
-  private let backgroundMargin: CGFloat
   private var cachedAttributes = [IndexPath: UICollectionViewLayoutAttributes]()
   weak var dataSource: DecorationCollectionViewFlowLayoutDataSource?
-  
-  init(numberOfColumns: Int, maximumWidth: CGFloat, cellSpacing: CGFloat, backgroundMargin: CGFloat) {
-    self.numberOfColumns = numberOfColumns
-    self.maximumWidth = maximumWidth
-    self.cellSpacing = cellSpacing
-    self.backgroundMargin = backgroundMargin
-    super.init()
-  }
-  required init?(coder: NSCoder) {
-    fatalError()
-  }
   
   override func prepare() {
     super.prepare()
     guard let collectionView = collectionView else { return }
-    guard let dataSource = self.dataSource else { fatalError("Confirm DecorationCollectionViewFlowLayoutDataSource") }
+    guard let dataSource = dataSource else { fatalError("Conform DecorationCollectionViewFlowLayoutDataSource") }
     self.cachedAttributes.removeAll()
-    self.minimumLineSpacing = self.cellSpacing
-    self.minimumInteritemSpacing = self.cellSpacing
     
     // 1. DecorationView 등록
     self.register(BackgroundDecorationView.self, forDecorationViewOfKind: BackgroundDecorationView.id)
     
-    var originX = 0.0
-    var originY = 0.0
-    let numberOfsections = collectionView.numberOfSections
+    // 2. [Section, [Item]]
+    let numberOfItemsListForSection = (0..<collectionView.numberOfSections)
+      .map { section in return (section, collectionView.numberOfItems(inSection: section)) }
+      .map { ($0, (0..<$1).map { $0 }) }
     
-    (0..<numberOfsections)
-      .map { section in return (collectionView.numberOfItems(inSection: section), section) }
-      .forEach { (numberOfItems, section) in
-        (0..<numberOfItems)
-          .forEach { [weak self] item in
-            guard let ss = self else { return }
-            let indexPath = IndexPath(item: item, section: section)
-            let attributes = UICollectionViewLayoutAttributes(forDecorationViewOfKind: BackgroundDecorationView.id, with: indexPath)
-
-            let cellSize = dataSource.collectionView(collectionView, indexPath: indexPath)
-            let nextOriginX = originX + cellSize.width + (ss.cellSpacing * 2)
-            let nextOriginY = originY + cellSize.height + (ss.cellSpacing * 2)
-            if nextOriginX + cellSize.width > ss.maximumWidth {
-              originX = 0
-              originY = nextOriginY
-            } else {
-              originX = nextOriginX
-            }
-            attributes.frame = CGRect(
-              x: originX,
-              y: originY,
-              width: cellSize.width + ss.backgroundMargin,
-              height: cellSize.height + ss.backgroundMargin
-            )
-            
-            ss.cachedAttributes[indexPath] = attributes
-          }
+    numberOfItemsListForSection
+      .forEach { (section, itemList) in
+        itemList.forEach { [weak self] item in
+          let indexPath = IndexPath(item: item, section: section)
+          let attributes = UICollectionViewLayoutAttributes(forDecorationViewOfKind: BackgroundDecorationView.id, with: indexPath)
+          attributes.frame = dataSource.getDecorationViewRect(collectionView, indexPath: indexPath)
+          self?.cachedAttributes[indexPath] = attributes
+        }
       }
   }
   override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {

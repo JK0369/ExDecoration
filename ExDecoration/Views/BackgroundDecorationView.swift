@@ -19,7 +19,7 @@ final class BackgroundDecorationView: UICollectionReusableView {
   override init(frame: CGRect) {
     super.init(frame: frame)
     let view = UIView()
-    view.backgroundColor = .black.withAlphaComponent(0.3)
+    view.backgroundColor = .systemGray3
     view.layer.cornerRadius = 8.0
     view.layer.masksToBounds = true
     view.layer.borderColor = UIColor.clear.cgColor
