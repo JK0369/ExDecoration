@@ -10,10 +10,21 @@ import SnapKit
 import Then
 
 class ViewController: UIViewController {
+  private enum Metric {
+    static let numberOfColumns = 2
+    static let maximumWidth = UIScreen.main.bounds.width
+    static let cellSpacing = 8.0
+    static let backgroundMargin = 6.0
+  }
   private lazy var collectionView = UICollectionView(
     frame: .zero,
-    collectionViewLayout: DecorationFlow().then {
-      $0.register(BackgroundDecorationView.self, forDecorationViewOfKind: BackgroundDecorationView.id)
+    collectionViewLayout: DecorationCollectionViewFlowLayout(
+      numberOfColumns: Metric.numberOfColumns,
+      maximumWidth: Metric.maximumWidth,
+      cellSpacing: Metric.cellSpacing,
+      backgroundMargin: Metric.backgroundMargin
+    ).then {
+      $0.dataSource = self
     }
   ).then {
     $0.showsVerticalScrollIndicator = false
@@ -67,24 +78,10 @@ extension ViewController: UICollectionViewDataSource {
       return cell
     }
   }
-  
-  // SupplementaryView, DecorationView
-  func collectionView(
-    _ collectionView: UICollectionView,
-    viewForSupplementaryElementOfKind kind: String,
-    at indexPath: IndexPath
-  ) -> UICollectionReusableView {
-    switch kind {
-    case BackgroundDecorationView.kind:
-      let decorationView = collectionView.dequeueReusableSupplementaryView(
-        ofKind: kind,
-        withReuseIdentifier: BackgroundDecorationView.id,
-        for: indexPath
-      ) as! BackgroundDecorationView
-      decorationView.prepare()
-      return decorationView
-    default:
-      return UICollectionReusableView()
-    }
+}
+
+extension ViewController: DecorationCollectionViewFlowLayoutDataSource {
+  func collectionView(_ collectionView: UICollectionView, indexPath: IndexPath) -> CGSize {
+    CGSize(width: 50, height: 50)
   }
 }
